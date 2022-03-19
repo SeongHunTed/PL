@@ -2,21 +2,23 @@
 #include <ctime>
 using namespace std;
 
-void Sort(int* a, int n);
-static int gcd(int x, int y);
-static int gcdArray(int* a, int n);
-int getChe(int a, int b);
+void swap(int &a, int &b); // 위치교환
+void Sort(int* a, int n); // 정렬함수
+static int gcd(int x, int y); // 두 정수의 최대 공약수
+static int gcdArray(int* a, int n); // 배열 내 최대 공약수
+int getChe(int a, int b); // 소수함수
 
 int main()
 {   
-    clock_t start, finish;
-    double duration;
-    int num = 30;
-    int arr[num];
+    clock_t start, finish; // 시간측정
+    double duration; // 시간
+    
+    int num = 30; // 배열 인덱스 수 초기화
+    int arr[num]; // 입력값 배열
 
+    // 배열 인덱스 수 입력
     while (true)
     {   
-        cout << "입력받을 배열의 인덱스" << endl;
         cout << "Input the number of numbers to process : ";
         cin >> num;
         try
@@ -38,38 +40,22 @@ int main()
         
     }
     
-    
+    // 배열 원소 입력받기
     // 입력오류 예외처리
-    cout << "배열원소들 입력" << endl;
     cout << "Input the numbers to be processed :  ";
     start = clock();
     for(int i = 0; i<num; i++)
     {
         cin >> arr[i];
     }
-    //입력오류 예외처리
 
     // 배열내 최대공약수 구하기
-    cout << "GCD of input numbers is " << gcdArray(arr, num) << endl;
-
-    // 최대공약수 구한 직후 배열 상태
     cout << endl;
-    cout << "최대공약수 구한 직후 배열 상태" << endl;
-    for(int i =0; i<num; i++)
-    {
-        cout << arr[i] << " ";
-    }
+    cout << "GCD of input numbers is " << gcdArray(arr, num) << endl;
+    cout << endl;
 
     // 배열 정렬
     Sort(arr, num);
-
-    cout << endl;
-    cout << endl;
-    cout << "정렬 후 배열 상태" << endl;
-    for(int i =0; i<num; i++)
-    {
-        cout << arr[i] << " ";
-    }
 
     // 중복제거하기
     int nArr[num];
@@ -85,26 +71,17 @@ int main()
         
     }
 
-    cout << endl;
-    cout << endl;
-    cout << "중복제거 후 배열상태" << endl;
-    for(int i = 0; i<count; i++)
-    {
-        cout << nArr[i] << " ";
-    }
-
-    cout << endl;
-    cout << endl;
-    cout << "두 수 사이 소수개수 구하기" << endl;
-
+    // 두 수 사이의 Prime number 구하기
     for(int i = 0; i<count-1; i++)
     {
         cout << "Number of prime numbers between " << nArr[i] << 
         ", " << nArr[i+1] << " : " << getChe(nArr[i], nArr[i+1]) << endl;
     }
+
     finish = clock();
 
     duration = (double)(finish-start) / CLOCKS_PER_SEC;
+    cout << endl;
     cout << "Total execution time using C++ is " << duration << " seconds!" << endl;
 
 
