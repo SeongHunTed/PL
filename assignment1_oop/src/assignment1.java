@@ -64,30 +64,56 @@ public class assignment1 {
     }
 
     public static void main(String[] args) {
-
         Scanner sc = new Scanner(System.in);
         int num = 30;
+        int flag = 0;
         int[] arr = new int[num];
 
         while(true) {
             System.out.print("Input the number of number to process : ");
-            String input = sc.next();
-            try {
-                num = Integer.parseInt(input);
-                break;
-            } catch(NumberFormatException ne) {
+            num = sc.nextInt();
+            if(num > 30 || num < 2){
+                flag = 1;
+            }
+            if(flag == 1){
                 System.out.println("Input only natural number between 2 and 30");
+            } else {
+                break;
             }
 
         }
 
-
-        System.out.print("Input the number to be processed : ");
-
-        for(int i = 0; i<num; i++)
-        {
-            arr[i] = sc.nextInt();
+        while(true) {
+            flag = 0;
+            System.out.print("Input the number to be processed : ");
+            for (int i = 0; i < num; i++) {
+                arr[i] = sc.nextInt();
+            }
+            for(int i = 0; i<num; i++) {
+                if (arr[i] > 100000 || arr[i] < 1) {
+                    flag = 1;
+                }
+            }
+            if(flag == 1) {
+                System.out.println("Input only natural number under 100001");
+            } else {
+                break;
+            }
         }
+
+//            try{
+//                for(int i = 0; i<num; i++){
+//                    if(arr[i] > 100000 || arr[i] < 1){
+//                        System.out.println("error");
+//                    }
+//                }
+//            } catch(NumberFormatException ne){
+//                System.out.println("Input only natural number under 100001");
+//            }
+//        for(int i = 0; i<num; i++)
+//        {
+//            arr[i] = sc.nextInt();
+//        }
 
 
         Instant start = Instant.now();
@@ -108,7 +134,8 @@ public class assignment1 {
 
         for(int i = 0; i<count-1; i++)
         {
-            System.out.println("Number of prime numbers between " + nArr[i] + ", " + nArr[i+1] + " : " + getChe(nArr[i], nArr[i+1]));
+            System.out.println("Number of prime numbers between " + nArr[i] + ", " + nArr[i+1] + " : "
+                    + getChe(nArr[i], nArr[i+1]));
         }
 
         Instant finish = Instant.now();
