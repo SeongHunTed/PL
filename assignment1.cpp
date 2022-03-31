@@ -14,7 +14,6 @@ int main()
 {   
     clock_t start, finish; // 시간측정
     double duration; // 시간
-    
     int num = 30; // 배열 인덱스 수 초기화
     int arr[num]; // 입력값 배열
 
@@ -22,7 +21,6 @@ int main()
     {
         cout << "Input the number of numbers to process : ";
         cin >> num;
-        int flag = -1;
 
         if(num >= 2 && num <= 30)
             break;
@@ -40,29 +38,28 @@ int main()
 
     while(true)
     {
+        int flag = 0;
         cout << "Input the numbers to be processed :  ";
 
         for(int i = 0; i<num; i++)
         {
             cin >> arr[i];    
         }
-        if(!cin)
-        {   
-            cout << "Input only natural number under 100000" << endl;
-            cout << "Input the correct number under array Index " << endl;
-            cin.clear();
-            cin.ignore(INT_MAX, '\n');
-        } else break;
-        
+        for(int i = 0; i<num; i++)
+        {
+            if(arr[i] > MAX_NUMBER || arr[i] < 1)
+            {
+                flag = 1;
+            }
+        }
+        if(flag > 0) cout << "input number between 1 and 100000\n" << endl;
+        else break;
     }
     
     start = clock();
 
-
     // 배열내 최대공약수 구하기  
-    cout << endl;
-    cout << "GCD of input numbers is " << gcdArray(arr, num) << endl;
-    cout << endl;
+    cout << "GCD of input numbers is " << gcdArray(arr, num) << "\n" << endl;
 
     // 배열 정렬
     Sort(arr, num);
@@ -89,15 +86,10 @@ int main()
     }
 
     finish = clock();
-
     duration = (double)(finish-start) / CLOCKS_PER_SEC;
-    cout << endl;
-    cout << "Total execution time using C++ is " << duration << " seconds!" << endl;
-
-
+    cout << "\n" <<"Total execution time using C++ is " << duration << " seconds!" << endl;
 
     return 0;
-
 }
 
 void swap(int &a, int &b)
