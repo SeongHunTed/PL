@@ -101,21 +101,6 @@ public class assignment1 {
             }
         }
 
-//            try{
-//                for(int i = 0; i<num; i++){
-//                    if(arr[i] > 100000 || arr[i] < 1){
-//                        System.out.println("error");
-//                    }
-//                }
-//            } catch(NumberFormatException ne){
-//                System.out.println("Input only natural number under 100001");
-//            }
-//        for(int i = 0; i<num; i++)
-//        {
-//            arr[i] = sc.nextInt();
-//        }
-
-
         Instant start = Instant.now();
 
         System.out.print("GCD of input number is ");
