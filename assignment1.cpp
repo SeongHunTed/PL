@@ -1,5 +1,7 @@
 #include <iostream>
 #include <ctime>
+
+#define MAX_NUMBER 100000
 using namespace std;
 
 void swap(int &a, int &b); // 위치교환
@@ -16,40 +18,48 @@ int main()
     int num = 30; // 배열 인덱스 수 초기화
     int arr[num]; // 입력값 배열
 
-    // 배열 인덱스 수 입력
-    while (true)
-    {   
+    while(true)
+    {
         cout << "Input the number of numbers to process : ";
         cin >> num;
-        try
+        int flag = -1;
+
+        if(num >= 2 && num <= 30)
+            break;
+        else if( num < 2 || num >30)
         {
-            if(!cin)
-                throw num;
-            else if(num <= 1 || num > 30)
-                throw num;
-            else
-                break;
-        }
-        catch(int num)
-        {
-            cout << "Input the number over 0 or only Positive Interger! " << endl;
+            cout << "The number should be between 2 to 30 and Integer" << endl;
+            cin.clear();
+            cin.ignore(INT_MAX, '\n');
+        } else {
+            cout << "Follow the rule (interger between 2 and 30)" << endl;
             cin.clear();
             cin.ignore(INT_MAX, '\n');
         }
-        
+    }
+
+    while(true)
+    {
+        cout << "Input the numbers to be processed :  ";
+
+        for(int i = 0; i<num; i++)
+        {
+            cin >> arr[i];    
+        }
+        if(!cin)
+        {   
+            cout << "Input only natural number under 100000" << endl;
+            cout << "Input the correct number under array Index " << endl;
+            cin.clear();
+            cin.ignore(INT_MAX, '\n');
+        } else break;
         
     }
     
-    // 배열 원소 입력받기
-    // 입력오류 예외처리
-    cout << "Input the numbers to be processed :  ";
     start = clock();
-    for(int i = 0; i<num; i++)
-    {
-        cin >> arr[i];
-    }
 
-    // 배열내 최대공약수 구하기
+
+    // 배열내 최대공약수 구하기  
     cout << endl;
     cout << "GCD of input numbers is " << gcdArray(arr, num) << endl;
     cout << endl;
@@ -147,13 +157,6 @@ int getChe(int a, int b)
     while( a < b)
     {
         flag = 0;
-
-        if(a<= 1)
-        {
-            ++a;
-            continue;
-        }
-
         for(i = 2; i <= a/2; ++i)
         {
             if(a%i == 0)
@@ -162,11 +165,9 @@ int getChe(int a, int b)
                 break;
             }
         }
-
         if(flag == 0)
             ++count;
-            ++a;
+        ++a;
     }
-
     return count;
 }
