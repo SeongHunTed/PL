@@ -102,10 +102,9 @@ public class assignment1 {
         }
 
         Instant start = Instant.now();
-
-        System.out.print("GCD of input number is ");
         int a = gcdarray(arr, num);
-        System.out.print(a);
+        System.out.println("GCD of input number is " + a);
+
 
         selection_sort(arr, num);
 
