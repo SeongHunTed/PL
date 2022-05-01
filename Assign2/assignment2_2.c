@@ -53,7 +53,6 @@ int main()
 {
     printf(">> ");
     fgets(input, sizeof(input), stdin);
-    printf("%lu\n", strlen(input));
     rmSpace();
     states st = {output[0], output, 0, 0};
     printf("%d\n", expr(&st));
@@ -74,9 +73,6 @@ void rmSpace()
         }
     }
     output[j] = 0;
-    for(int i = 0; i < 1000; i++){
-        printf("%c", output[i]);
-    }
 }
 
 enum token tkCheck(states *ptr) // 현재 인덱스 토큰 형식
@@ -115,7 +111,12 @@ int term(states *ptr)                           // <term> = <factor> {* <factor>
             _factor = _factor * factor(ptr);    // 결과 갱신
         } else if(tkCheck(ptr) == DIVIDE){      // / 경우
             nextToken(ptr);                     // 토큰 이동
-            _factor = _factor / factor(ptr);    // 결과 갱신
+            int b = factor(ptr);
+            if(b == 0){
+                printf("Division by zero\n");
+                exit(0);
+            }
+            _factor = _factor / b;    // 결과 갱신
         } else return _factor;                  // 결과 반환
     }
 }
