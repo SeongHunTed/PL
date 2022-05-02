@@ -1,4 +1,4 @@
-package pl;
+package RD_JAVA;
 
 public enum Symbol {
     NUMBER,
