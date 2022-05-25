@@ -5,7 +5,7 @@
 #include <stdbool.h>
 
 #define RECORDSIZE 1024
-#define ROOMRECORD 200
+#define ROOMRECORD 120
 // 1024 byte : 4 byte : 지점 번호 || 200 byte : 스터디 공간 { 4byte : 스터디 공간 번호 4byte : 스터디 공간 수용 인원 ~~~~}
 
 // 관리자 모드
@@ -24,9 +24,10 @@ int deleteBranch(FILE *fp);                             // 지점 삭제
 int bemptycheck(FILE *fp, int branchNum);               // 지점 존재 확인
 int remptycheck(FILE *fp, int roomNum, int branchNum);  // 스터디 공간 존재 확인
 
-
 int userMode();                                         // 사용자 모드
 void printRoom();                                       // 스터디 공간 조회
+void reserve();                                         // 신규 예약
+void fixReserve();                                      // 예약조회  
 
 int main(){
     while(1){
@@ -140,8 +141,8 @@ int manageRoom(FILE *fp){
     int branchNum = 0;  // 지점 번호
     int roomNum = 0;    // 스터디 공간 번호
     int maxNum = 0;     // 스터디 공간 허용 인원
-    char recordbuf[180] = {0};
-    printf("\n\n [1] 스터디 공간 추가 \n [2] 스터디 공간 수정 \n [3] 스터디 공간 삭제 [4] 초기 화면\n\n\n");
+    char recordbuf[120] = {0};
+    printf("\n\n [1] 스터디 공간 추가 \n [2] 스터디 공간 수정 \n [3] 스터디 공간 삭제 \n [4] 초기 화면\n\n\n");
     printf(" Option : ");
     scanf("%d", &select);
 
@@ -385,7 +386,7 @@ void printRoom(){
     int branchNum = 0;
     int roomNum = 0;
     int maxNum = 0;
-    char roominfo[ROOMRECORD] = {0};
+    char roominfo[120] = {0};
 
     for(int i = 0;  i < 6; i++){
         fseek(fp, i * RECORDSIZE, SEEK_SET);
@@ -396,9 +397,9 @@ void printRoom(){
             fseek(fp, 8 + j * ROOMRECORD + i * RECORDSIZE, SEEK_SET);
             fread(&maxNum, sizeof(int), 1, fp);
             fseek(fp, 12 + j * ROOMRECORD + i * RECORDSIZE, SEEK_SET);
-            fread(roominfo, sizeof(ROOMRECORD), 1, fp);
+            fread(roominfo, sizeof(roominfo), 1, fp);
             if(roomNum > 0){
-                printf("\n [ %d 지점 ] \t [ #%d 번 스터디 공간# 허용 인원 : %d | %s ]\n", branchNum, roomNum, maxNum, roominfo);
+                printf("\n [ %d 지점 ] \t [### %s  ###]\n", branchNum, roominfo);
             }
         }
     }
