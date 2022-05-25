@@ -5,7 +5,13 @@
 #include <stdbool.h>
 
 #define RECORDSIZE 1024
-#define ROOMRECORD 120
+#define ROOMRECORD 196
+
+// 1. 해당 날 : 22년 05월 26로 설정
+// 2. 관리자가 설정을 마치고 사용자가 예약을 하는 관점에서 다루었음
+// 3. 한 사람은 한 예약만 한다고 가정함.
+
+
 // 1024 byte : 4 byte : 지점 번호 || 200 byte : 스터디 공간 { 4byte : 스터디 공간 번호 4byte : 스터디 공간 수용 인원 ~~~~}
 
 // 관리자 모드
@@ -26,10 +32,11 @@ int remptycheck(FILE *fp, int roomNum, int branchNum);  // 스터디 공간 존�
 
 int userMode();                                         // 사용자 모드
 void printRoom();                                       // 스터디 공간 조회
-void reserve();                                         // 신규 예약
+int reserve(char *id);                                         // 신규 예약
 void fixReserve();                                      // 예약조회  
 
 int main(){
+    
     while(1){
         int select = 0;
         printf("========================");
@@ -114,7 +121,7 @@ int insertBranch(FILE *fp){
     int buf = 0;
     printf(" 추가 하실 지점 번호를 입력하세요 : ");
     scanf("%d", &branchNum);
-            
+
     fseek(fp, (branchNum - 1) * RECORDSIZE, SEEK_SET);
     fread(&buf, sizeof(int), 1, fp);
         
@@ -124,7 +131,7 @@ int insertBranch(FILE *fp){
 
     if(branchNum != buf){
         fseek(fp, (branchNum - 1) * RECORDSIZE, SEEK_SET);
-        fwrite(&branchNum, sizeof(int), 1, fp);
+        fwrite(&branchNum, sizeof(RECORDSIZE), 1, fp);
         fclose(fp);
         return 1;
     } else {
@@ -141,7 +148,7 @@ int manageRoom(FILE *fp){
     int branchNum = 0;  // 지점 번호
     int roomNum = 0;    // 스터디 공간 번호
     int maxNum = 0;     // 스터디 공간 허용 인원
-    char recordbuf[120] = {0};
+    char recordbuf[ROOMRECORD] = {0};
     printf("\n\n [1] 스터디 공간 추가 \n [2] 스터디 공간 수정 \n [3] 스터디 공간 삭제 \n [4] 초기 화면\n\n\n");
     printf(" Option : ");
     scanf("%d", &select);
@@ -327,7 +334,7 @@ int remptycheck(FILE *fp, int roomNum, int branchNum){
 }
 
 int userMode(){
-    FILE *user;
+    
 
     char id[10] = {0};
 
@@ -342,11 +349,7 @@ int userMode(){
         }
     }
 
-    if(access(id, F_OK) < 0){
-        user = fopen(id, "w+");
-    } else {
-        user = fopen(id, "+r");
-    }
+
     
 
     int select = 0;
@@ -354,17 +357,19 @@ int userMode(){
     printf("\n\n [1] 스터디 공간 조회 \n [2] 신규 예약 \n [3] 예약 수정 \n [4] 초기화면 \n\n========================\n\n");
     printf(" Option : ");
     scanf("%d", &select);
+
     switch (select)
     {
     case 1:
         printRoom();
         break;
     case 2:
-
+        reserve(id);
         break;
     case 3:
         break;
     case 4:
+        printf("\n\n 초기화면으로 돌아갑니다!\n\n");
         break;
     default:
         break;
@@ -403,4 +408,130 @@ void printRoom(){
             }
         }
     }
+}
+
+int reserve(char *id){
+    // 오늘 날짜
+    char today[7] = "220526";
+    // 예약 날짜
+    char reserveDay[7] = {0};
+    // 복사할 buffer
+    char filebuf[RECORDSIZE*6] = {0};
+    // 저장된 허용인원
+    int maxNum = 0;
+    // 예약 시간 56byte 짜리 배열 196-56 140
+    int arrTime[14] = {0};
+    int a = 0; // 해당 시간 비었는 지 체크
+
+    // 사용자 예약 입력값 정보
+    int branchNum = 0;
+    int roomNum = 0;
+    int people = 0;
+    int start = 0;
+    int duration = 0;
+
+    // fp -> 기존 파일 reserve -> 예약파일
+    FILE *fp;
+    FILE *reserve;
+
+    // 기존 관리자 파일로 부터 스터디 공간과 지점에 대한 정보를 가져온다.
+    if(access("Manage", F_OK) < 0){
+        printf(" 예약 가능한 Tozz 센터가 없습니다!\n");
+    } else {
+        fp = fopen("Manage", "r+");
+        fseek(fp, 0, SEEK_SET);
+        fread(filebuf, RECORDSIZE*6, 1, fp);
+    }
+
+    // 예약 날짜에 대한 예약 파일을 새로 만든다. -> 존재하면 만들지 않는다.
+    printf(" 예약할 날을 입력 햬주세요 <YYMMDD> : ");
+    scanf("%s", reserveDay);
+
+    if(atoi(today) == atoi(reserveDay)){
+        printf("\n\n 당일 예약은 불가 합니다 \n\n");
+        return 0;
+    }
+
+    if(access(reserveDay, F_OK) < 0){
+        reserve = fopen(reserveDay, "w+");
+        printf("파일 새로 옮겨 쓰기 \n");
+        fwrite(filebuf, RECORDSIZE*6, 1, reserve);
+    } else {
+        reserve = fopen(reserveDay, "r+");
+    }
+
+    // 예약 정보 받기
+    printf("\n\n 반드시, 존재하는 지점, 스터디 공간을 확인하세요 \n\n");
+    printRoom();
+    printf("\n\n 예약할 지점 번호 :");                  // 없는 공간
+    scanf("%d", &branchNum);
+    if(bemptycheck(reserve, branchNum) == 0){
+        printf(" 존재 하지 않는 지점 입니다.\n");
+        return 0;
+    }
+    printf("\n\n 예약할 스터디 공간 번호 :");             // 가능한 공간
+    scanf("%d", &roomNum);
+    if(remptycheck(reserve, roomNum, branchNum) == 0){
+        printf(" 존재 하지 않는 스터디 공간 입니다.\n");
+        return 0;
+    }
+    printf("\n\n 사용 인원 : ");                      // 예외처리 허용인원 초과
+    scanf("%d", &people);
+    fseek(reserve, 4 + (roomNum-1)*ROOMRECORD + (branchNum -1) * RECORDSIZE, sizeof(int));
+    fread(&maxNum, sizeof(int), 1, reserve);
+    if(people > maxNum){
+        printf("\n\n 허용인원 초과입니다\n");
+        return 0;
+    }
+    printf("\n\n 사용 시작 시간 <8시~ 22시> : ");       // 예외처리 오전 8시 부터 밤 10시
+    scanf("%d", &start);
+    if(start > 22){
+        printf("\n\n 오픈 시간이 아닙니다\n");
+        return 0;
+    }
+    printf("\n\n 사용 예정 시간 : ");                  // 예외처리 10시를 넘어가는 경우
+    scanf("%d", &duration);
+    if(duration + start > 22){
+        printf("\n\n 마감 시간을 넘겨졌습니다.\n");
+        return 0;
+    }
+
+    // 사전에 다른 사람이 예약했는지 확인하기
+    for(int i = 0; i < duration; i++){
+        fseek(reserve, 140 + 4 * (start-8+i) + (roomNum-1) * ROOMRECORD + (branchNum-1) * RECORDSIZE, SEEK_SET);
+        fread(&a, sizeof(int), 1, reserve);
+        if(a>0){
+            printf(" %d시에 예약이 차 있습니다!\n", start + i);
+            return 0;
+        }
+    }
+
+    // 예약이 꽉 차 있지 않다면 예약 하기 
+    for(int i = 0; i < duration; i++){
+        arrTime[start - 8 + i] = 1; 
+    }
+    fseek(reserve, 140 + (roomNum-1) * ROOMRECORD + (branchNum-1) * RECORDSIZE, SEEK_SET);
+    fwrite(arrTime, sizeof(arrTime), 1, reserve);
+    
+    // 개인 예약 정보 파일에 저장
+    FILE *user;
+
+    if(access(id, F_OK) < 0){
+        user = fopen(id, "w+");
+    } else {
+        user = fopen(id, "r+");
+    }
+
+    // 예약자 이름으로 예약 정보 저장하기
+    fseek(user, 0, SEEK_SET);
+    fwrite(&branchNum, sizeof(int), 1, user);
+    fwrite(&roomNum, sizeof(int), 1, user);
+    fwrite(&people, sizeof(int), 1, user);
+    fwrite(&start, sizeof(int), 1, user);
+    printf("start : %d \n", start);
+    fwrite(&duration, sizeof(int), 1, user);
+    fclose(user);
+    fclose(reserve);
+    fclose(fp);
+    
 }
