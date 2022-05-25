@@ -25,13 +25,12 @@ int bemptycheck(FILE *fp, int branchNum);               // 지점 존재 확인
 int remptycheck(FILE *fp, int roomNum, int branchNum);  // 스터디 공간 존재 확인
 
 
-// int userMode();     // 사용자 모드
+int userMode();                                         // 사용자 모드
+void printRoom();                                       // 스터디 공간 조회
 
 int main(){
-    
-    int select = 0;
-
     while(1){
+        int select = 0;
         printf("========================");
         printf("\n\n [1] 관리자 모드 \n [2] 사용자 모드 \n [3] 프로그램 종료 \n\n========================\n\n");
         printf(" Option : ");
@@ -47,8 +46,8 @@ int main(){
             break;
         case 2:
             printf("\n\n <User Mode>\n\n");
-            printf("========================");
-            // userMode();
+            printf("========================\n");
+            userMode();
             break;
         case 3:
             printf("\n\n <Program Exit>\n\n");
@@ -76,7 +75,7 @@ int managerMode(){
 
     int select = 0;
 
-    printf("\n\n [1] 지점 추가 \n [2] 지점 수정 \n [3] 지점 삭제 \n [4] 초기화면 \n\n\n");
+    printf("\n\n [1] 지점 추가 \n [2] 지점 수정 \n [3] 지점 삭제 \n [4] 초기 화면 \n\n\n");
     printf(" Option : ");
     scanf("%d", &select);
     
@@ -97,6 +96,8 @@ int managerMode(){
         printf("\n\n <지점 삭제>\n");
         deleteBranch(fp);
         return 0;
+    case 4:
+        break;
     default:
         printf("Wrong Option!\n");
         break;
@@ -140,7 +141,7 @@ int manageRoom(FILE *fp){
     int roomNum = 0;    // 스터디 공간 번호
     int maxNum = 0;     // 스터디 공간 허용 인원
     char recordbuf[180] = {0};
-    printf("\n\n [1] 스터디 공간 추가 \n [2] 스터디 공간 수정 \n [3] 스터디 공간 삭제 \n\n\n");
+    printf("\n\n [1] 스터디 공간 추가 \n [2] 스터디 공간 수정 \n [3] 스터디 공간 삭제 [4] 초기 화면\n\n\n");
     printf(" Option : ");
     scanf("%d", &select);
 
@@ -268,6 +269,8 @@ int manageRoom(FILE *fp){
         fwrite(emptyrecord, ROOMRECORD, 1, fp);
         fclose(fp);
         break;
+    case 4:
+        break;
     default:
         printf(" Wrong Option!\n");
         break;
@@ -320,4 +323,83 @@ int remptycheck(FILE *fp, int roomNum, int branchNum){
     if(buf != roomNum){
         return 0;
     } else return 1;
+}
+
+int userMode(){
+    FILE *user;
+
+    char id[10] = {0};
+
+    while(1){
+        memset(&id, 0xFF, sizeof(id));
+        printf(" 사용자 ID를 입력하세요 : ");
+        scanf("%s", id);
+        if(strlen(id) < 11 && strlen(id) > 4){
+            break;
+        } else {
+            printf(" 5글자 이상 10글자 이하 영문, 숫자를 조합하세요! \n");
+        }
+    }
+
+    if(access(id, F_OK) < 0){
+        user = fopen(id, "w+");
+    } else {
+        user = fopen(id, "+r");
+    }
+    
+
+    int select = 0;
+    printf("========================");
+    printf("\n\n [1] 스터디 공간 조회 \n [2] 신규 예약 \n [3] 예약 수정 \n [4] 초기화면 \n\n========================\n\n");
+    printf(" Option : ");
+    scanf("%d", &select);
+    switch (select)
+    {
+    case 1:
+        printRoom();
+        break;
+    case 2:
+
+        break;
+    case 3:
+        break;
+    case 4:
+        break;
+    default:
+        break;
+    }
+
+
+    return 0;
+}
+
+void printRoom(){
+    FILE *fp;
+
+    if(access("Manage", F_OK) < 0){
+        printf(" Tozz 스터디 센터가 없습니다! \n");
+    } else {
+        fp = fopen("Manage", "r+");
+    }
+
+    int branchNum = 0;
+    int roomNum = 0;
+    int maxNum = 0;
+    char roominfo[ROOMRECORD] = {0};
+
+    for(int i = 0;  i < 6; i++){
+        fseek(fp, i * RECORDSIZE, SEEK_SET);
+        fread(&branchNum, sizeof(int), 1, fp);
+        for(int j = 0; j < 5; j++){
+            fseek(fp, 4 + j * ROOMRECORD +  i * RECORDSIZE, SEEK_SET);
+            fread(&roomNum, sizeof(int), 1, fp);
+            fseek(fp, 8 + j * ROOMRECORD + i * RECORDSIZE, SEEK_SET);
+            fread(&maxNum, sizeof(int), 1, fp);
+            fseek(fp, 12 + j * ROOMRECORD + i * RECORDSIZE, SEEK_SET);
+            fread(roominfo, sizeof(ROOMRECORD), 1, fp);
+            if(roomNum > 0){
+                printf("\n [ %d 지점 ] \t [ #%d 번 스터디 공간# 허용 인원 : %d | %s ]\n", branchNum, roomNum, maxNum, roominfo);
+            }
+        }
+    }
 }
