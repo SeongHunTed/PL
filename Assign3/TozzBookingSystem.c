@@ -33,7 +33,8 @@ int remptycheck(FILE *fp, int roomNum, int branchNum);  // 스터디 공간 존�
 int userMode();                                         // 사용자 모드
 void printRoom();                                       // 스터디 공간 조회
 int reserve(char *id);                                         // 신규 예약
-void fixReserve();                                      // 예약조회  
+int fixReserve(char *id);                                      // 예약조회
+int resetFile(char *reserveDay, int branchNum, int roomNum, int people, int start, int duration);   // 예약 변경시 예약파일 수정
 
 int main(){
     
@@ -335,7 +336,7 @@ int remptycheck(FILE *fp, int roomNum, int branchNum){
 
 int userMode(){
     
-
+    // 사용자 ID
     char id[10] = {0};
 
     while(1){
@@ -349,12 +350,9 @@ int userMode(){
         }
     }
 
-
-    
-
     int select = 0;
     printf("========================");
-    printf("\n\n [1] 스터디 공간 조회 \n [2] 신규 예약 \n [3] 예약 수정 \n [4] 초기화면 \n\n========================\n\n");
+    printf("\n\n [1] 스터디 공간 조회 \n [2] 신규 예약 \n [3] 예약 조회 및 수정 \n [4] 초기화면 \n\n========================\n\n");
     printf(" Option : ");
     scanf("%d", &select);
 
@@ -367,6 +365,7 @@ int userMode(){
         reserve(id);
         break;
     case 3:
+        fixReserve(id);
         break;
     case 4:
         printf("\n\n 초기화면으로 돌아갑니다!\n\n");
@@ -454,7 +453,6 @@ int reserve(char *id){
 
     if(access(reserveDay, F_OK) < 0){
         reserve = fopen(reserveDay, "w+");
-        printf("파일 새로 옮겨 쓰기 \n");
         fwrite(filebuf, RECORDSIZE*6, 1, reserve);
     } else {
         reserve = fopen(reserveDay, "r+");
@@ -524,6 +522,7 @@ int reserve(char *id){
 
     // 예약자 이름으로 예약 정보 저장하기
     fseek(user, 0, SEEK_SET);
+    fwrite(reserveDay, sizeof(reserveDay), 1, user);
     fwrite(&branchNum, sizeof(int), 1, user);
     fwrite(&roomNum, sizeof(int), 1, user);
     fwrite(&people, sizeof(int), 1, user);
@@ -533,5 +532,80 @@ int reserve(char *id){
     fclose(user);
     fclose(reserve);
     fclose(fp);
+
+    return 0;
     
+}
+
+int fixReserve(char *id){
+
+    // 예약자로 저장된 파일 읽어올 포인터
+    FILE *user; 
+    // 예약정보 받아올 변수
+    char reserveDay[7] = {0};
+    int branchNum = 0;
+    int roomNum = 0;
+    int people = 0;
+    int start = 0;
+    int duration = 0;
+
+    if(access(id, F_OK) < 0){
+        printf(" 귀하의 예약 정보가 없습니다!\n");
+        return 0;
+    }
+
+    user = fopen(id, "r+");
+    
+    fseek(user, 0, SEEK_SET);
+    fread(reserveDay, sizeof(reserveDay), 1, user);
+    fread(&branchNum, sizeof(int), 1, user);
+    fread(&roomNum, sizeof(int), 1, user);
+    fread(&people, sizeof(int), 1, user);
+    fread(&start, sizeof(int), 1, user);
+    fread(&duration, sizeof(int), 1, user);
+
+    printf("\n\n========================\n\n");
+    printf("=======<예약정보>=======\n");
+    printf(" [ 예약 날짜 : %s ]\n [ 스터디 지점 : %d ]\n  스터디 공간 번호 : %d\n  인원 : %d\n  예약 시간 : %d\n  사용 시간 : %d\n", reserveDay,branchNum, roomNum, people, start, duration);
+
+    int select = 0;
+
+    printf("\n========================\n");
+    printf(" [1] : 예약 변경\n\n [2] : 초기화면\n\n\n");
+    printf(" Option : ");
+    scanf("%d", &select);
+    fclose(user);
+
+    switch (select)
+    {
+    case 1:
+        resetFile(reserveDay, branchNum, roomNum, people, start, duration);
+        reserve(id);
+        break;
+    case 2:
+        break;
+    default:
+        printf(" Wrong Option!\n");
+        break;
+    }
+
+    return 0;
+
+}
+
+int resetFile(char *reserveDay, int branchNum, int roomNum, int people, int start, int duration){
+
+    FILE *reserve;
+    reserve = fopen(reserveDay, "r+");
+
+    int timereset = 0;
+
+    for(int i = 0; i < duration; i++){
+        fseek(reserve, 140 + 4 * (start - 8 + i) + (roomNum - 1) * RECORDSIZE + (branchNum -1) * RECORDSIZE, SEEK_SET);
+        fwrite(&timereset, sizeof(int), 1, reserve);
+    }
+
+    fclose(reserve);
+
+    return 0;
 }
