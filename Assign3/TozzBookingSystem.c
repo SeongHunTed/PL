@@ -527,7 +527,6 @@ int reserve(char *id){
     fwrite(&roomNum, sizeof(int), 1, user);
     fwrite(&people, sizeof(int), 1, user);
     fwrite(&start, sizeof(int), 1, user);
-    printf("start : %d \n", start);
     fwrite(&duration, sizeof(int), 1, user);
     fclose(user);
     fclose(reserve);
