@@ -23,17 +23,17 @@
 //      스터디 공간 사용 인원 : 1 ~ 10
 //      스터디 공간 : 이름, 보유 컴퓨터 개수 임의 지정
 
-int managerMode();                                      // 관리자 모드
-int insertBranch(FILE *fp);                             // 지점 추가
-int manageRoom(FILE *fp);                               // 지점별 스터디 공간 관리
-int deleteBranch(FILE *fp);                             // 지점 삭제
-int bemptycheck(FILE *fp, int branchNum);               // 지점 존재 확인
-int remptycheck(FILE *fp, int roomNum, int branchNum);  // 스터디 공간 존재 확인
+int managerMode();                                                                                  // 관리자 모드
+int insertBranch(FILE *fp);                                                                         // 지점 추가
+int manageRoom(FILE *fp);                                                                           // 지점별 스터디 공간 관리
+int deleteBranch(FILE *fp);                                                                         // 지점 삭제
+int bemptycheck(FILE *fp, int branchNum);                                                           // 지점 존재 확인
+int remptycheck(FILE *fp, int roomNum, int branchNum);                                              // 스터디 공간 존재 확인
 
-int userMode();                                         // 사용자 모드
-void printRoom();                                       // 스터디 공간 조회
-int reserve(char *id);                                         // 신규 예약
-int fixReserve(char *id);                                      // 예약조회
+int userMode();                                                                                     // 사용자 모드
+void printRoom();                                                                                   // 스터디 공간 조회
+int reserve(char *id);                                                                              // 신규 예약
+int fixReserve(char *id);                                                                           // 예약조회
 int resetFile(char *reserveDay, int branchNum, int roomNum, int people, int start, int duration);   // 예약 변경시 예약파일 수정
 
 int main(){
