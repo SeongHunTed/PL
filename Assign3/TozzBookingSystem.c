@@ -21,7 +21,7 @@
 // 2. 지점 수정 - > 스터디 공간 관리 1 ~ 5
 //      1. 스터디 공간 추가     2. 스터디 공간 수정     3. 스터디 공간 삭제
 //      스터디 공간 사용 인원 : 1 ~ 10
-//      스터디 공간 : 이름, 층, 책상 개수, 보유 컴퓨터 개수 임의 지정
+//      스터디 공간 : 이름, 보유 컴퓨터 개수 임의 지정
 
 int managerMode();                                      // 관리자 모드
 int insertBranch(FILE *fp);                             // 지점 추가
@@ -120,9 +120,9 @@ int managerMode(){
 int insertBranch(FILE *fp){
     int branchNum;
     int buf = 0;
-    printf(" 추가 하실 지점 번호를 입력하세요 : ");
+    printf(" [0] : 초기화면\n 추가 하실 지점 번호를 입력하세요 : ");
     scanf("%d", &branchNum);
-
+    if(branchNum == 0) return 0;
     fseek(fp, (branchNum - 1) * RECORDSIZE, SEEK_SET);
     fread(&buf, sizeof(int), 1, fp);
         
@@ -157,14 +157,15 @@ int manageRoom(FILE *fp){
     switch (select)
     {
     case 1:
-        printf("\n\n <스터디 공간 추가> \n\n");
+        printf("\n\n <스터디 공간 추가> \n [0] : 초기화면\n\n");
         
         printf(" 스터디 공간을 추가할 ||!지점 번호!||를 입력하세요 : ");
         scanf("%d", &branchNum);
 
-        if(branchNum > 6){
+        if(branchNum > 6 || branchNum < 0){
             printf(" 잘못된 접근입니다!\n");
         }
+        if(branchNum == 0) return 0;
 
         // 지점이 존재 하지 않을 경우 
         if(bemptycheck(fp, branchNum) == 0) {
@@ -174,7 +175,7 @@ int manageRoom(FILE *fp){
 
         printf(" 추가할 스터디 공간의 번호를 입력하세요 : ");
         scanf("%d", &roomNum);
-
+        if(roomNum == 0) return 0;
         if(roomNum > 5){
             printf(" 잘못된 접근입니다!\n");
             return 0;
@@ -182,6 +183,7 @@ int manageRoom(FILE *fp){
 
         printf(" 스터디 공간의 허용 인원을 설정해주세요 : ");
         scanf("%d", &maxNum);
+        if(maxNum == 0) return 0;
 
         if(maxNum > 10){
             printf(" 잘못된 접근입니다!\n");
@@ -209,12 +211,13 @@ int manageRoom(FILE *fp){
         break;
     
     case 2:
-        printf("\n\n <스터디 공간 수정> \n\n");
-        printf(" 스터디 공간을 수정할 ||!지점 번호!||를 입력하세요");
+        printf("\n\n <스터디 공간 수정> \n [0] : 초기화면 \n\n");
+        printf(" 스터디 공간을 수정할 ||!지점 번호!||를 입력하세요 : ");
         scanf("%d", &branchNum);
-        if(branchNum > 6){
+        if(branchNum > 6 || branchNum < 0){
             printf(" 잘못된 접근입니다!\n");
         }
+        if(branchNum == 0) return 0;
 
         // 지점이 존재 하지 않을 경우 
         if(bemptycheck(fp, branchNum) == 0) {
@@ -224,7 +227,7 @@ int manageRoom(FILE *fp){
 
         printf(" 수정할 스터디 공간의 번호를 입력하세요 : ");
         scanf("%d", &roomNum);
-
+        if(roomNum == 0) return 0;
         if(roomNum > 5){
             printf(" 잘못된 접근입니다!\n");
             return 0;
@@ -232,6 +235,7 @@ int manageRoom(FILE *fp){
 
         printf(" 스터디 공간의 허용 인원을 수정 해주세요 : ");
         scanf("%d", &maxNum);
+        if(maxNum == 0) return 0;
 
         if(maxNum > 10){
             printf(" 잘못된 접근입니다!\n");
@@ -256,14 +260,16 @@ int manageRoom(FILE *fp){
         break;
     
     case 3:
-        printf("\n\n <스터디 공간 삭제> \n\n");
+        printf("\n\n <스터디 공간 삭제> \n [0] : 초기화면\n\n");
         int deleteRoom = 0;
         int zero = 0;
         char emptyrecord[ROOMRECORD] = {0};
         printf("\n\n 삭제할 스터디 공간의 ||!지점번호!||를 입력하세요 : ");
         scanf("%d", &branchNum);
+        if(branchNum == 0) break;
         printf("\n\n 삭제할 스터디 공간의 번호를 입력하세요 : ");
         scanf("%d", &deleteRoom);
+        if(deleteRoom == 0) break;
 
         if(remptycheck(fp, deleteRoom, branchNum) == 0){
             printf(" 존재하지 않는 지점입니다!\n");
@@ -292,7 +298,7 @@ int deleteBranch(FILE *fp){
     int deleteBranch = 0;
     int zero = 0;
     char emptyrecord[RECORDSIZE] = {0};
-    printf("\n\n 삭제할 지점의 번호를 입력 하세요 : ");
+    printf("\n\n [0] : 초기화면\n 삭제할 지점의 번호를 입력 하세요 : ");
     scanf("%d", &deleteBranch);
 
     if(bemptycheck(fp, deleteBranch)==0){
@@ -334,6 +340,7 @@ int remptycheck(FILE *fp, int roomNum, int branchNum){
     } else return 1;
 }
 
+// 사용자 모드
 int userMode(){
     
     // 사용자 ID
@@ -341,8 +348,9 @@ int userMode(){
 
     while(1){
         memset(&id, 0xFF, sizeof(id));
-        printf(" 사용자 ID를 입력하세요 : ");
+        printf(" [0] : 초기화면\n 사용자 ID를 입력하세요 : ");
         scanf("%s", id);
+        if(atoi(id) == 0) return 0;
         if(strlen(id) < 11 && strlen(id) > 4){
             break;
         } else {
@@ -378,6 +386,7 @@ int userMode(){
     return 0;
 }
 
+// 스터디 지점, 공간 조회
 void printRoom(){
     FILE *fp;
 
@@ -409,6 +418,7 @@ void printRoom(){
     }
 }
 
+// 신규 예약 및 재예약
 int reserve(char *id){
     // 오늘 날짜
     char today[7] = "220526";
@@ -443,8 +453,9 @@ int reserve(char *id){
     }
 
     // 예약 날짜에 대한 예약 파일을 새로 만든다. -> 존재하면 만들지 않는다.
-    printf(" 예약할 날을 입력 햬주세요 <YYMMDD> : ");
+    printf(" [0] : 초기화면\n 예약할 날을 입력 햬주세요 <YYMMDD> : ");
     scanf("%s", reserveDay);
+    if(atoi(reserveDay) == 0) return 0;
 
     if(atoi(today) == atoi(reserveDay)){
         printf("\n\n 당일 예약은 불가 합니다 \n\n");
@@ -459,36 +470,41 @@ int reserve(char *id){
     }
 
     // 예약 정보 받기
-    printf("\n\n 반드시, 존재하는 지점, 스터디 공간을 확인하세요 \n\n");
+    printf("\n\n 반드시, 존재하는 지점, 스터디 공간을 확인하세요 \n\n 0을 입력하시면 초기화면으로 이동합니다! \n\n");
     printRoom();
-    printf("\n\n 예약할 지점 번호 :");                  // 없는 공간
+    printf("\n\n [0] : 초기화면\n 예약할 지점 번호 : ");                  // 없는 공간
     scanf("%d", &branchNum);
+    if(branchNum == 0) return 0;
     if(bemptycheck(reserve, branchNum) == 0){
         printf(" 존재 하지 않는 지점 입니다.\n");
         return 0;
     }
-    printf("\n\n 예약할 스터디 공간 번호 :");             // 가능한 공간
+    printf("\n\n [0] : 초기화면\n 예약할 스터디 공간 번호 : ");             // 가능한 공간
     scanf("%d", &roomNum);
+    if(roomNum == 0) return 0;
     if(remptycheck(reserve, roomNum, branchNum) == 0){
         printf(" 존재 하지 않는 스터디 공간 입니다.\n");
         return 0;
     }
-    printf("\n\n 사용 인원 : ");                      // 예외처리 허용인원 초과
+    printf("\n\n [0] : 초기화면\n 사용 인원 : ");                      // 예외처리 허용인원 초과
     scanf("%d", &people);
+    if(people == 0) return 0;
     fseek(reserve, 4 + (roomNum-1)*ROOMRECORD + (branchNum -1) * RECORDSIZE, sizeof(int));
     fread(&maxNum, sizeof(int), 1, reserve);
     if(people > maxNum){
         printf("\n\n 허용인원 초과입니다\n");
         return 0;
     }
-    printf("\n\n 사용 시작 시간 <8시~ 22시> : ");       // 예외처리 오전 8시 부터 밤 10시
+    printf("\n\n [0] : 초기화면\n 사용 시작 시간 <8시~ 22시> : ");       // 예외처리 오전 8시 부터 밤 10시
     scanf("%d", &start);
+    if(start == 0) return 0;
     if(start > 22){
         printf("\n\n 오픈 시간이 아닙니다\n");
         return 0;
     }
-    printf("\n\n 사용 예정 시간 : ");                  // 예외처리 10시를 넘어가는 경우
+    printf("\n\n [0] : 초기화면\n 사용 예정 시간 : ");                  // 예외처리 10시를 넘어가는 경우
     scanf("%d", &duration);
+    if(duration == 0) return 0;
     if(duration + start > 22){
         printf("\n\n 마감 시간을 넘겨졌습니다.\n");
         return 0;
@@ -536,6 +552,7 @@ int reserve(char *id){
     
 }
 
+// 예약 수정
 int fixReserve(char *id){
 
     // 예약자로 저장된 파일 읽어올 포인터
@@ -592,6 +609,7 @@ int fixReserve(char *id){
 
 }
 
+// 예약 파일 수정
 int resetFile(char *reserveDay, int branchNum, int roomNum, int people, int start, int duration){
 
     FILE *reserve;
