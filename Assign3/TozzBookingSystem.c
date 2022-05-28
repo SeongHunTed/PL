@@ -348,9 +348,8 @@ int userMode(){
 
     while(1){
         memset(&id, 0xFF, sizeof(id));
-        printf(" [0] : 초기화면\n 사용자 ID를 입력하세요 : ");
+        printf(" 사용자 ID를 입력하세요 : ");
         scanf("%s", id);
-        if(atoi(id) == 0) return 0;
         if(strlen(id) < 11 && strlen(id) > 4){
             break;
         } else {
