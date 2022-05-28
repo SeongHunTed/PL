@@ -523,6 +523,15 @@ int reserve(char *id){
     for(int i = 0; i < duration; i++){
         arrTime[start - 8 + i] = 1; 
     }
+
+    // 기존 예약 정보까지 업데이트
+    for(int i = 0; i < 14; i++){
+        fseek(reserve, 140 + 4 * i + (roomNum-1) * ROOMRECORD + (branchNum-1) * RECORDSIZE, SEEK_SET);
+        fread(&a, sizeof(int), 1, reserve);
+        if(a>0){
+            arrTime[i] = 1;
+        }
+    }
     fseek(reserve, 140 + (roomNum-1) * ROOMRECORD + (branchNum-1) * RECORDSIZE, SEEK_SET);
     fwrite(arrTime, sizeof(arrTime), 1, reserve);
     
@@ -615,6 +624,17 @@ int resetFile(char *reserveDay, int branchNum, int roomNum, int people, int star
     reserve = fopen(reserveDay, "r+");
 
     int timereset = 0;
+    // 기존 파일에서 타인의 예약 정보는 남기기 위한 구현부
+    int a = 0;
+    int arrTime[14] = {0};
+
+    for(int i = 0; i < 14; i++){
+        fseek(reserve, 140 + 4 * i + (roomNum - 1) * RECORDSIZE + (branchNum -1) * RECORDSIZE, SEEK_SET);
+        fread(&a, sizeof(int), 1, reserve);
+        if(a>0){
+            arrTime[i] = 1;
+        }
+    }
 
     for(int i = 0; i < duration; i++){
         fseek(reserve, 140 + 4 * (start - 8 + i) + (roomNum - 1) * RECORDSIZE + (branchNum -1) * RECORDSIZE, SEEK_SET);
