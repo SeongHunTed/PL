@@ -1,22 +1,21 @@
 import java.io.*;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Scanner;
-import java.util.Set;
 
 public class Manager {
 
-    private int branchNum = 0;
-    private int roomNum = 0;
-    private int maxNum = 0;
-
-    private String branch;
+    private final int RECORDSIZE = 1024;
+    private String filename = "manage.txt";
 
     private Scanner sc;
     File file = new File("./src/files/manage.txt");
-    static BufferedWriter w = null;
-    static BufferedReader r = null;
-    HashMap<String, String> map = new HashMap<String, String>();
+
+    static FileReader r = null;
+    static FileWriter w = null;
+
+    static BufferedReader br = null;
+
+
+//    HashMap<String, String> map = new HashMap<String, String>();
 
     public Manager() throws IOException {
         if(!file.exists()){
@@ -27,28 +26,23 @@ public class Manager {
 
     private void addBranch(){
         try{
-            w = new BufferedWriter(new FileWriter("./src/files/manage.txt", true));
+            w = new FileWriter(filename);
             System.out.print(" 추가 하실 지점 번호를 입력 해주세요 : ");
-            branchNum = sc.nextInt();
+            int branchNum = sc.nextInt();
+
             // 지점 번호 예외 처리
             if(branchNum > 6 || branchNum < 0) {System.out.println(" Wrong Option!"); return;}
-            // 지점이 기 존재 하는 경우
-//            String s;
-//            String [] sArray;
-//            r = new BufferedReader(new FileReader("./src/files/manage.txt"));
-//            while((s = r.readLine()) != null){
-//                sArray = s.split(":");
-//                map.put(sArray[0], sArray[1]);
-//            }
-//            Set<String> keylist = map.keySet();
-//            Iterator<String> itr = keylist.iterator();
-//            while(itr.hasNext()){
-//                String a = itr.next();
-//                System.out.println(a);
-//            }
-//            r.close();
-            branch = "지점 : " + branchNum + "\n\n\n\n\n";
-            w.write(branch);
+
+            // 기존 존재 하는 지점 예외처리
+            char [] recordbuf = new char[2];
+            br = new BufferedReader(new FileReader(filename));
+            br.read(recordbuf, RECORDSIZE * (branchNum - 1), 4);
+
+            System.out.println(recordbuf);
+            r.close();
+
+            String branch = branchNum + "지점";
+            w.write(branch, RECORDSIZE * (branchNum - 1) , branch.length());
             w.close();
 
         } catch(IOException e){
@@ -69,7 +63,6 @@ public class Manager {
 
             switch (select){
                 case 1:
-
                     addBranch();
                     break;
                 case 2:
