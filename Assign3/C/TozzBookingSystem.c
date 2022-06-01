@@ -565,8 +565,8 @@ int reserve(char *id){
 
     // 해당과정까지 수행 완료 후 Manage파일에 삭제 하지 못하도록 표기.
     int a = 1;
-    // fseek(fp, 120 + (roomNum-1) * ROOMRECORD + (branchNum-1) * RECORDSIZE, SEEK_SET);
-    // fwrite(&a, sizeof(int), 1, fp);
+    fseek(fp, 120 + (roomNum-1) * ROOMRECORD + (branchNum-1) * RECORDSIZE, SEEK_SET);
+    fwrite(&a, sizeof(int), 1, fp);
 
     // 예약자 이름으로 예약 정보 저장하기
     fseek(user, 0, SEEK_SET);
