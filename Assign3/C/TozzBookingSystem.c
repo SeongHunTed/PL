@@ -3,14 +3,15 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdbool.h>
+#include <ctype.h>
 #include <time.h>
 
 #define RECORDSIZE 1024
 #define ROOMRECORD 196
 #define USERRECORD 27
 
-// 1. 해당 날 : 22년 05월 26로 설정
-// 2. 관리자가 설정을 마치고 사용자가 예약을 하는 관점에서 다루었음
+// 1. 해당 날 : 22년 05월 26로 설정 -> 수정 완료
+// 2. 관리자가 설정을 마치고 사용자가 예약을 하는 관점에서 다루었음 -> 수정 완료
 // 3. 한 사람은 한 예약만 한다고 가정함.
 // 4. 당일 예약 보다 뒤의 경우는 따로 처리 하지 않음
 
@@ -383,17 +384,27 @@ int userMode(){
     
     // 사용자 ID
     char id[10] = {0};
+    char exit[5] = "exit";
 
     while(1){
+        int checkDigit = 0;
+        int checkChar = 0;
         memset(&id, 0xFF, sizeof(id));
-        printf(" 사용자 ID를 입력하세요 : ");
+        printf("exit 를 입력하면 초기화면으로 이동합니다!\n\n사용자 ID를 입력하세요 : ");
         scanf("%s", id);
-        if(strlen(id) < 11 && strlen(id) > 4){
+        if(strcmp(exit, id) == 0) return 0;
+        for(int i = 0; i < strlen(id); i++){
+            if(isdigit(id[i]) > 0) checkDigit++;
+            else checkChar++;
+        }
+        if((strlen(id) < 11) && (strlen(id) > 4) && (checkDigit > 0) && (checkChar > 0)){
             break;
         } else {
             printf(" 5글자 이상 10글자 이하 영문, 숫자를 조합하세요! \n");
         }
     }
+
+
 
     int select = 0;
     printf("========================");
@@ -468,7 +479,7 @@ int reserve(char *id){
     int today = (t->tm_year - 100) * 10000 + (t->tm_mon + 1) * 100 + (t->tm_mday);
     // 예약 날짜
     char reserveDay[7] = {0};
-    time_t timer;
+
     
     // 복사할 buffer
     char filebuf[RECORDSIZE*6] = {0};
@@ -523,13 +534,15 @@ int reserve(char *id){
         reserve = fopen(reserveDay, "w+");
         fwrite(filebuf, RECORDSIZE*6, 1, reserve);
     } else {
+        // 관리자가 중간에 추가 지점을 만들었을 경우 대비
         reserve = fopen(reserveDay, "r+");
-        fread(reserveBuf, sizeof(RECORDSIZE*6), 1, reserve);
-        fseek(reserve, 0, SEEK_SET);
-        fwrite(filebuf, RECORDSIZE*6, 1, reserve);
-        fseek(reserve, 0, SEEK_SET);
-        fwrite(reserveBuf, sizeof(RECORDSIZE*6), 1, reserve);
+        // fread(reserveBuf, sizeof(RECORDSIZE*6), 1, reserve);
+        // fseek(reserve, 0, SEEK_SET);
+        // fwrite(filebuf, RECORDSIZE*6, 1, reserve);
+        // fseek(reserve, 0, SEEK_SET);
+        // fwrite(reserveBuf, sizeof(RECORDSIZE*6), 1, reserve);
     }
+
 
     // 예약 정보 받기
     printf("\n\n 반드시, 존재하는 지점, 스터디 공간을 확인하세요 \n\n 0을 입력하시면 초기화면으로 이동합니다! \n\n");
