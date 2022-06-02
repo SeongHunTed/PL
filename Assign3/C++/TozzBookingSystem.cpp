@@ -2,11 +2,13 @@
 #include <cstdio>
 #include <string>
 #include <unistd.h>
+#include <cctype>
 
 using namespace std;
 
 #define RECORDSIZE 1024
 #define ROOMRECORD 196
+#define USERRECORD 27
 #define F_OK 0
 
 class Manage{
@@ -51,6 +53,7 @@ private:
         
         int zero = 0;
         char recordbuf[ROOMRECORD] = {0};
+        int reserveCheck = 0;
 
         cout << "\n\n[1] 스터디 공간 추가 \n[2] 스터디 공간 수정 \n[3] 스터디 공간 삭제 \n[4] 초기 화면\n\n\n========================\n\nOption :";
         cin >> mode;
@@ -132,6 +135,15 @@ private:
                     break;
                 }
 
+                
+                fseek(fp, 136 + (roomNum - 1) * ROOMRECORD + (branchNum - 1) * RECORDSIZE, SEEK_SET);
+                fread(&reserveCheck, sizeof(int), 1, fp);
+                if(reserveCheck == 6){
+                    printf(" 이미 예약되어있는 공간은 삭제 할 수 없습니다!");
+                    return;
+                }
+
+
                 cout << "스터디 공간의 허용 인원을 설정해주세요 : ";
                 cin >> maxNum;
                 if(maxNum == 0) return;
@@ -174,6 +186,14 @@ private:
                     break;
                 }
 
+                reserveCheck = 0;
+                fseek(fp, 136 + (roomNum - 1) * ROOMRECORD + (branchNum - 1) * RECORDSIZE, SEEK_SET);
+                fread(&reserveCheck, sizeof(int), 1, fp);
+                if(reserveCheck == 6){
+                    printf(" 이미 예약되어있는 공간은 삭제 할 수 없습니다!");
+                    return;
+                }
+
                 fseek(fp, 4 + (roomNum-1)*ROOMRECORD + (branchNum-1) * RECORDSIZE, SEEK_SET);
                 fwrite(&zero, sizeof(int), 1, fp);
                 fseek(fp, 8 + (roomNum-1)*ROOMRECORD + (branchNum-1) * RECORDSIZE, SEEK_SET);
@@ -196,11 +216,20 @@ private:
     void deleteBranch(){
         char recordbuf[RECORDSIZE] = {0};
         int zero = 0;
+        int reserveCheck = 0;
         cout << "\n\n[0] : 초기화면\n삭제할 지점의 번호를 입력 하세요 : ";
         cin >> branchNum;
 
         if(branchCheck(branchNum) == 0){
             printf("존재하지 않는 지점입니다!\n");
+            return;
+        }
+
+        // 사용자가 예약을 했다면 해당 지점 삭제 불가
+        fseek(fp, 1020 + (branchNum-1) * RECORDSIZE, SEEK_SET);
+        fread(&reserveCheck, sizeof(int), 1, fp);
+        if(reserveCheck == 6){
+            printf(" 예약되어있기 때문에 삭제할 수 없습니다!");
             return;
         }
 
@@ -214,10 +243,10 @@ private:
 
 public:
     Manage(){
-        if(access("Manage.txt", F_OK) < 0){
-            fp = fopen("Manage.txt", "w+");
+        if(access("Manage", F_OK) < 0){
+            fp = fopen("Manage", "w+");
         } else {
-            fp = fopen("Manage.txt", "r+");
+            fp = fopen("Manage", "r+");
         }
     }
     ~Manage(){}
@@ -297,10 +326,10 @@ private:
 
     // 지점, 스터디 공간 출력
     void printRoom(){
-        if(access("Manage.txt", F_OK) < 0){
+        if(access("Manage", F_OK) < 0){
             cout << " Tozz 스터디 센터가 없습니다! \n";
         } else {
-            fp = fopen("Manage.txt", "r+");
+            fp = fopen("Manage", "r+");
         }
         int maxNum = 0;
         char roominfo[120] = {0};
@@ -309,6 +338,7 @@ private:
             fseek(fp, i * RECORDSIZE, SEEK_SET);
             fread(&branchNum, sizeof(int), 1, fp);
             for(int j = 0; j < 5; j++){
+                roomNum = 0;
                 fseek(fp, 4 + j * ROOMRECORD +  i * RECORDSIZE, SEEK_SET);
                 fread(&roomNum, sizeof(int), 1, fp);
                 fseek(fp, 8 + j * ROOMRECORD + i * RECORDSIZE, SEEK_SET);
@@ -323,48 +353,72 @@ private:
         fclose(fp);
     }
 
-    // 신규 예약 및 재예약
+    // 신규 예약
     void reserveUser(){
-        char today[7] = "220526";
+        // 오늘 날짜
+        struct tm* t;
+        time_t base = time(NULL);
+
+        t = localtime(&base);
+        
+        int today = (t->tm_year - 100) * 10000 + (t->tm_mon + 1) * 100 + (t->tm_mday);
+
         char filebuf[RECORDSIZE*6] = {0};
         int maxNum = 0;
         int arrTime[14] = {0};
         
 
-        // 기존 파일 가져오기 -> 예약 날짜에 대한 파일 생성
-        if(access("Manage.txt", F_OK) < 0){
-            cout << "예약 가능한 Tozz 스터디 센터가 업습니다!" << endl;
+        // 기존 관리자 파일로 부터 스터디 공간과 지점에 대한 정보를 가져온다.
+        if(access("Manage", F_OK) < 0){
+            printf(" 예약 가능한 Tozz 센터가 없습니다!\n");
         } else {
-            fp = fopen("Manage.txt", "r+");
+            fp = fopen("Manage", "r+");
             fseek(fp, 0, SEEK_SET);
             fread(filebuf, RECORDSIZE*6, 1, fp);
         }
+        fclose(fp);
 
         // 예약 날짜 받기
         cout << " [0] : 초기화면\n 예약할 날을 입력 햬주세요 <YYMMDD> : ";
         cin >> reserveDay;
         if(atoi(reserveDay) == 0) return;
 
+        if(atoi(reserveDay) < today){
+            cout << " 올바르지 않은 날 입니다!" << endl;
+            return;
+        }
+
         // 당일 예약 예외 처리
-        if(atoi(today) == atoi(reserveDay)){
+        if(today == atoi(reserveDay)){
             cout << "\n\n 당일 예약은 불가 합니다 \n\n";
             return;
         }
 
-    
         // 예약 날짜에 대한 파일 생성 및 덮어쓰기
+        
+        // 개인 예약 정보 파일에 저장
+        if(access(id, F_OK) < 0){
+            user = fopen(id, "w+");
+        } else {
+            user = fopen(id, "r+");
+        }
+
+        // 예약 날짜 파일
+        char reserveBuf[RECORDSIZE*6] = {0};
         if(access(reserveDay, F_OK) < 0){
             reserve = fopen(reserveDay, "w+");
             fwrite(filebuf, RECORDSIZE*6, 1, reserve);
         } else {
+            // 관리자가 중간에 추가 지점을 만들었을 경우 대비
             reserve = fopen(reserveDay, "r+");
+            fseek(reserve, 0, SEEK_SET);
         }
         
         // 예약 정보 받기
         cout << "\n\n 반드시, 존재하는 지점, 스터디 공간을 확인하세요 \n\n 0을 입력하시면 초기화면으로 이동합니다! \n\n";
         printRoom();
         cout << "\n\n [0] : 초기화면\n 예약할 지점 번호 : ";                  // 없는 공간
-        scanf("%d", &branchNum);
+        cin >> branchNum;
         if(branchNum == 0) return;
         if(branchCheck(branchNum) == 0){
             cout << " 존재 하지 않는 지점 입니다.\n";
@@ -425,25 +479,39 @@ private:
             if(a>0){
                 arrTime[i] = 1;
             }
-        }   
+        }
+
         fseek(reserve, 140 + (roomNum-1) * ROOMRECORD + (branchNum-1) * RECORDSIZE, SEEK_SET);
         fwrite(arrTime, sizeof(arrTime), 1, reserve);
 
-        // 개인 예약 정보 파일에 저장
-        if(access(id, F_OK) < 0){
-            user = fopen(id, "w+");
-        } else {
-            user = fopen(id, "r+");
+        // 해당과정까지 수행 완료 후 Manage파일에 삭제 하지 못하도록 표기 -> 지점 삭제 금지 || 공간 삭제 금지
+        fp = fopen("Manage", "r+");
+        int reserveCheck = 6;
+        fseek(fp, 1020 + (branchNum-1) * RECORDSIZE, SEEK_SET);
+        fwrite(&reserveCheck, sizeof(int), 1, fp);
+        fseek(fp, 136 + (roomNum -1) * ROOMRECORD + (branchNum - 1) * RECORDSIZE, SEEK_SET);
+        fwrite(&reserveCheck, sizeof(int), 1, fp);
+
+
+        // 사용자 예약 파일 읽어 오기
+        int count = 0;
+        char ch;
+        while(1){
+            ch = fgetc(user);
+            if(ch == EOF) break;
+            count++;
         }
+        count = count / USERRECORD;
 
         // 예약자 이름으로 예약 정보 저장하기
-        fseek(user, 0, SEEK_SET);
+        fseek(user, USERRECORD * count, SEEK_SET);
         fwrite(reserveDay, sizeof(reserveDay), 1, user);
         fwrite(&branchNum, sizeof(int), 1, user);
         fwrite(&roomNum, sizeof(int), 1, user);
         fwrite(&people, sizeof(int), 1, user);
         fwrite(&start, sizeof(int), 1, user);
         fwrite(&duration, sizeof(int), 1, user);
+
         fclose(user);
         fclose(reserve);
         fclose(fp);
@@ -461,21 +529,32 @@ private:
         }
 
         user = fopen(id, "r+");
+        // 사용자 예약 파일 읽어 오기
+        int count = 0;
+        char ch;
+        while(1){
+            ch = fgetc(user);
+            if(ch == EOF) break;
+            count++;
+        }
+        count = count / USERRECORD;
 
         memset(reserveDay, (char)0xFF, sizeof(reserveDay));
-    
-        fseek(user, 0, SEEK_SET);
-        fread(reserveDay, sizeof(reserveDay), 1, user);
-        fread(&branchNum, sizeof(int), 1, user);
-        fread(&roomNum, sizeof(int), 1, user);
-        fread(&people, sizeof(int), 1, user);
-        fread(&start, sizeof(int), 1, user);
-        fread(&duration, sizeof(int), 1, user);
 
-        cout << "\n\n========================\n\n";
-        cout << "=======<예약정보>=======\n";
-        cout << "[ 예약 날짜 : " << reserveDay << " ]\n [ 스터디 지점 : " << branchNum << " ]\n  스터디 공간 번호 : "<< roomNum
-        << "\n  인원 : " << people << "\n  예약 시간 : "<< start << "\n  사용 시간 : " << duration << endl;
+        for(int i = 0; i < count; i++){
+            fseek(user, i * USERRECORD, SEEK_SET);
+            fread(reserveDay, sizeof(reserveDay), 1, user);
+            fread(&branchNum, sizeof(int), 1, user);
+            fread(&roomNum, sizeof(int), 1, user);
+            fread(&people, sizeof(int), 1, user);
+            fread(&start, sizeof(int), 1, user);
+            fread(&duration, sizeof(int), 1, user);
+
+            cout << "\n\n========================\n\n";
+            cout << "=======<예약정보>=======\n";
+            cout << "[ 예약 날짜 : " << reserveDay << " ]\n [ 스터디 지점 : " << branchNum << " ]\n  스터디 공간 번호 : "<< roomNum
+            << "\n  인원 : " << people << "\n  예약 시간 : "<< start << "\n  사용 시간 : " << duration << endl;
+        }
 
 
         cout << "\n========================\n";
@@ -484,11 +563,14 @@ private:
         cin >> mode;
         fclose(user);
 
+        int num = 0;
+
         switch (mode)
         {
         case 1:
-            resetFile();
-            reserveUser();
+            cout << "\n몇번째 예약을 변경하시겠습니까? : ";
+            cin >> num;
+            reReserve(num);
             break;
         case 2:
             return;
@@ -501,15 +583,103 @@ private:
 
     }
 
-    // 예약 파일 수정 ex) "220527"
-    void resetFile(){
+    void reReserve(int num){
+
+        user = fopen(id, "r+");
+
+        int count = 0;
+        char ch;
+        while(1){
+            ch = fgetc(user);
+            if(ch == EOF) break;
+            count++;
+        }
+        count = count / USERRECORD;
+
+        if(num > count){
+            printf("해당 예약 번호는 존재하지 않습니다!\n");
+            return;
+        }
+
+        char reset[USERRECORD] = {0};
+        
+        fseek(user, (num-1) * USERRECORD, SEEK_SET);
+        fread(reserveDay, sizeof(reserveDay), 1, user);
+        fread(&branchNum, sizeof(int), 1, user);
+        fread(&roomNum, sizeof(int), 1, user);
+        fread(&people, sizeof(int), 1, user);
+        fread(&start, sizeof(int), 1, user);
+        fread(&duration, sizeof(int), 1, user);
+
+        fseek(user, (num-1) * USERRECORD, SEEK_SET);
+        fwrite(reset, sizeof(USERRECORD), 1, user);
         reserve = fopen(reserveDay, "r+");
 
         int timereset = 0;
-
-        // 기존 파일에서 타인의 예약 정보는 남기기 위한 구현부
+        int a = 0;
         int arrTime[14] = {0};
+        int maxNum = 0;
 
+        // 날짜 예약 파일에 가서 변경전 데이터 지우기
+        for(int i = 0; i < duration; i++){
+            fseek(reserve, 140 + 4 * (start - 8 + i) + (roomNum - 1) * RECORDSIZE + (branchNum -1) * RECORDSIZE, SEEK_SET);
+            fwrite(&timereset, sizeof(int), 1, reserve);
+        }
+
+        // 예약 정보 받기
+        cout << "\n\n 반드시, 존재하는 지점, 스터디 공간을 확인하세요 \n\n 0을 입력하시면 초기화면으로 이동합니다! \n\n";
+        printRoom();
+        cout << "\n\n [0] : 초기화면\n 예약할 지점 번호 : ";                  // 없는 공간
+        scanf("%d", &branchNum);
+        if(branchNum == 0) return;
+        if(branchCheck(branchNum) == 0){
+            cout << " 존재 하지 않는 지점 입니다.\n";
+            return;
+        }
+
+        cout << "\n\n [0] : 초기화면\n 예약할 스터디 공간 번호 : ";             // 가능한 공간
+        cin >> roomNum;
+        if(roomNum == 0) return;
+        if(roomCheck(roomNum, branchNum) == 0){
+            cout << " 존재 하지 않는 스터디 공간 입니다.\n";
+            return;
+        }
+        cout << "\n\n [0] : 초기화면\n 사용 인원 : ";                      // 예외처리 허용인원 초과
+        cin >> people;
+        if(people == 0) return;
+        fseek(reserve, 8 + (roomNum-1)*ROOMRECORD + (branchNum -1) * RECORDSIZE, SEEK_SET);
+        fread(&maxNum, sizeof(int), 1, reserve);
+
+        if(people > maxNum){
+            cout << "\n\n 허용인원 초과입니다\n";
+            return;
+        }
+        cout << "\n\n [0] : 초기화면\n 사용 시작 시간 <8시~ 22시> : ";       // 예외처리 오전 8시 부터 밤 10시
+        cin >> start;
+        if(start == 0) return;
+        if(start > 22){
+            cout << "\n\n 오픈 시간이 아닙니다\n";
+            return;
+        }
+        cout << "\n\n [0] : 초기화면\n 사용 예정 시간 : ";                  // 예외처리 10시를 넘어가는 경우
+        cin >> duration;
+        if(duration == 0) return;
+        if(duration + start > 22){
+            cout << "\n\n 마감 시간을 넘겨졌습니다.\n";
+            return;
+        }
+
+        // 사전에 다른 사람이 예약했는지 확인하기
+        for(int i = 0; i < duration; i++){
+            fseek(reserve, 140 + 4 * (start-8+i) + (roomNum-1) * ROOMRECORD + (branchNum-1) * RECORDSIZE, SEEK_SET);
+            fread(&a, sizeof(int), 1, reserve);
+            if(a>0){
+                printf(" %d시에 예약이 차 있습니다!\n", start + i);
+                return;
+            }
+        }
+
+        // 기존 예약 정보 받아오기
         for(int i = 0; i < 14; i++){
             fseek(reserve, 140 + 4 * i + (roomNum - 1) * RECORDSIZE + (branchNum -1) * RECORDSIZE, SEEK_SET);
             fread(&a, sizeof(int), 1, reserve);
@@ -518,15 +688,29 @@ private:
             }
         }
 
+        // 새로 예약한 시간
         for(int i = 0; i < duration; i++){
-            fseek(reserve, 140 + 4 * (start - 8 + i) + (roomNum - 1) * RECORDSIZE + (branchNum -1) * RECORDSIZE, SEEK_SET);
-            fwrite(&timereset, sizeof(int), 1, reserve);
+            arrTime[start - 8 + i] = 1; 
         }
 
+        fseek(reserve, 140 + (roomNum-1) * ROOMRECORD + (branchNum-1) * RECORDSIZE, SEEK_SET);
+        fwrite(arrTime, sizeof(arrTime), 1, reserve);
+
+        // 예약자 이름으로 예약 정보 저장하기
+        fseek(user, (num -1)*USERRECORD , SEEK_SET);
+        fwrite(reserveDay, sizeof(reserveDay), 1, user);
+        fwrite(&branchNum, sizeof(int), 1, user);
+        fwrite(&roomNum, sizeof(int), 1, user);
+        fwrite(&people, sizeof(int), 1, user);
+        fwrite(&start, sizeof(int), 1, user);
+        fwrite(&duration, sizeof(int), 1, user);
+
+        fclose(user);
         fclose(reserve);
 
         return;
     }
+
 
 public:
 
@@ -536,13 +720,20 @@ public:
     // 사용자 모드
     void userMode(){
 
+        char exit[5] = "exit";
         while(1){
             while(1){
+                int checkDigit = 0;
+                int checkChar = 0;
                 memset(&id, 0xFF, sizeof(id));
-                cout << "\n사용자 ID를 입력하세요 : ";
+                cout << "\n초기화면으로 돌아가시려면 exit를 입력하세요!\n\n사용자 ID를 입력하세요 : ";
                 cin >> id;
-
-                if(strlen(id) < 11 && strlen(id) > 4) break;
+                if(strcmp(exit, id) == 0) return;
+                for(int i = 0; i < strlen(id); i++){
+                    if(isdigit(id[i]) > 0) checkDigit++;
+                    else checkChar++;
+                }
+                if((strlen(id) < 11) && (strlen(id) > 4) && (checkDigit > 0) && (checkChar > 0)) break;
                 else cout << " 5글자 이상 10글자 이하 영문, 숫자를 조합하세요! \n";
             }
 
