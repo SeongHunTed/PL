@@ -6,49 +6,26 @@
 #include <ctype.h>
 #include <time.h>
 
-#define RECORDSIZE 1024
-#define ROOMRECORD 196
-#define USERRECORD 27
+#define RECORDSIZE 1024           // 지점 1개에 필요한 파일 사이즈
+#define ROOMRECORD 196            // 스터디 공간의 정보 1개의 사이즈  
+#define USERRECORD 27             // ID로 만들어지는 예약 파일
 
-// 1. 해당 날 : 22년 05월 26로 설정 -> 수정 완료
-// 2. 관리자가 설정을 마치고 사용자가 예약을 하는 관점에서 다루었음 -> 수정 완료
-// 3. 한 사람은 한 예약만 한다고 가정함.
-// 4. 당일 예약 보다 뒤의 경우는 따로 처리 하지 않음
-
-
-// 1024 byte : 4 byte : 지점 번호 || 200 byte : 스터디 공간 { 4byte : 스터디 공간 번호 4byte : 스터디 공간 수용 인원 ~~~~}
-
-// 관리자 모드
-// 지점과 스터디공간 번호는 중복을 허용하지 않음
-// 지점 관리 1 ~ 6
-//      1. 지점 추가    2. 지점 수정    3. 지점 삭제
-// 2. 지점 수정 - > 스터디 공간 관리 1 ~ 5
-//      1. 스터디 공간 추가     2. 스터디 공간 수정     3. 스터디 공간 삭제
-//      스터디 공간 사용 인원 : 1 ~ 10
-//      스터디 공간 : 이름, 보유 컴퓨터 개수 임의 지정
-
-// 현재 날짜 구하기
-// typedef struct _TIME{
-//     int year;
-//     int month;
-//     int date;
-// }time;
+// 1024 byte : 4 byte : 지점 번호 || 196 byte X 5 : 스터디 공간 정보 || 40 byte 추가 정보를 위한 정보
 
 // 관리자용
-int managerMode();                                                                                  // 관리자 모드
-int insertBranch(FILE *fp);                                                                         // 지점 추가
-int manageRoom(FILE *fp);                                                                           // 지점별 스터디 공간 관리
-int deleteBranch(FILE *fp);                                                                         // 지점 삭제
-int bemptycheck(FILE *reserve, int branchNum);                                                           // 지점 존재 확인
-int remptycheck(FILE *fp, int roomNum, int branchNum);                                              // 스터디 공간 존재 확인
+int managerMode();                                                                  // 관리자 모드
+int insertBranch(FILE *fp);                                                         // 지점 추가
+int manageRoom(FILE *fp);                                                           // 지점별 스터디 공간 관리
+int deleteBranch(FILE *fp);                                                         // 지점 삭제
+int bemptycheck(FILE *fp, int branchNum);                                      // 지점 존재 확인
+int remptycheck(FILE *fp, int roomNum, int branchNum);                              // 스터디 공간 존재 확인
 
 // 사용자용
-int userMode();                                                                                     // 사용자 모드
-void printRoom();                                                                                   // 스터디 공간 조회
-int reserve(char *id);                                                                              // 신규 예약
-int fixReserve(char *id);                                                                           // 예약조회
-// int resetFile(char *reserveDay, int branchNum, int roomNum, int people, int start, int duration);   // 예약 변경시 예약파일 수정
-int reReserve(int num, char* id);
+int userMode();                                                                     // 사용자 모드
+void printRoom();                                                                   // 스터디 공간 조회
+int reserve(char *id);                                                              // 신규 예약
+int fixReserve(char *id);                                                           // 예약조회
+int reReserve(int num, char* id);                                                   // 예약 변경
 
 int main(){
     
@@ -95,14 +72,11 @@ int managerMode(){
     } else {
         fp = fopen("Manage", "r+");
     }
-
     int select = 0;
-
     printf("\n\n [1] 지점 추가 \n [2] 지점 수정 \n [3] 지점 삭제 \n [4] 초기 화면 \n\n\n");
     printf(" Option : ");
     scanf("%d", &select);
     
-
     switch (select)
     {
     case 1:
@@ -125,9 +99,7 @@ int managerMode(){
         printf("Wrong Option!\n");
         break;
     }
-
     return 1;
-
 }
 
 // 지점 생성
@@ -251,7 +223,7 @@ int manageRoom(FILE *fp){
         fseek(fp, 136 + (roomNum - 1) * ROOMRECORD + (branchNum - 1) * RECORDSIZE, SEEK_SET);
         fread(&reserveCheck, sizeof(int), 1, fp);
         if(reserveCheck == 6){
-            printf(" 이미 예약되어있는 공간은 삭제 할 수 없습니다!");
+            printf(" 이미 예약되어있는 공간은 수정 할 수 없습니다!");
             return 0;
         }
 
@@ -272,14 +244,10 @@ int manageRoom(FILE *fp){
         // 최대 인원 재설정
         fseek(fp, 8 + (roomNum-1)*ROOMRECORD + (branchNum-1)*RECORDSIZE, SEEK_SET);
         fwrite(&maxNum, sizeof(int), 1, fp);
-
         // 공간 정보 동기화
         sprintf(recordbuf, "%d번 지점의 %d번 방 || %d인 실 || 컴퓨터 보유 : %d ", branchNum, roomNum, maxNum, maxNum);
         fseek(fp, 12 + (roomNum-1)*ROOMRECORD + (branchNum-1)*RECORDSIZE, SEEK_SET);
         fwrite(recordbuf, sizeof(recordbuf), 1, fp);
-
-
-
         fclose(fp);
         break;
     
@@ -300,8 +268,13 @@ int manageRoom(FILE *fp){
         fseek(fp, 136 + (deleteRoom - 1) * ROOMRECORD + (branchNum - 1) * RECORDSIZE, SEEK_SET);
         fread(&reserveCheck, sizeof(int), 1, fp);
         if(reserveCheck == 6){
-            printf(" 이미 예약되어있는 공간은 삭제 할 수 없습니다!");
-            return 0;
+            int delete = 0;
+            printf("\n\n <Warning> : 예약되어있기 때문에 삭제할 수 없습니다!\n\n");
+            printf(" 0을 누르시면 초기화면으로 이동합니다!\n 그래도 삭제하시려면 1을 누르세요!\n \n Option : ");
+            scanf("%d", &delete);
+            if(delete == 0){
+                return 0;
+            }
         }
 
         if(remptycheck(fp, deleteRoom, branchNum) == 0){
@@ -341,8 +314,13 @@ int deleteBranch(FILE *fp){
     fseek(fp, 1020 + (deleteBranch-1) * RECORDSIZE, SEEK_SET);
     fread(&reserveCheck, sizeof(int), 1, fp);
     if(reserveCheck == 6){
-        printf(" 예약되어있기 때문에 삭제할 수 없습니다!");
-        return 0;
+        int delete = 0;
+        printf("\n\n <Warning> : 예약되어있기 때문에 삭제할 수 없습니다!\n\n");
+        printf(" 0을 누르시면 초기화면으로 이동합니다!\n 그래도 삭제하시려면 1을 누르세요!\n \n Option : ");
+        scanf("%d", &delete);
+        if(delete == 0){
+            return 0;
+        }
     }
 
     fseek(fp, (deleteBranch-1)*RECORDSIZE, SEEK_SET);
@@ -355,10 +333,10 @@ int deleteBranch(FILE *fp){
 }
 
 // 지점 존재 여부 확인
-int bemptycheck(FILE *reserve, int branchNum){
+int bemptycheck(FILE *fp, int branchNum){
     int buf = 0;
-    fseek(reserve, (branchNum-1)*RECORDSIZE, SEEK_SET);
-    fread(&buf, sizeof(int), 1, reserve);
+    fseek(fp, (branchNum-1)*RECORDSIZE, SEEK_SET);
+    fread(&buf, sizeof(int), 1, fp);
 
     if(buf != branchNum){
         printf(" 존재하지 않는 지점입니다! \n");
@@ -404,14 +382,11 @@ int userMode(){
         }
     }
 
-
-
     int select = 0;
     printf("========================");
     printf("\n\n [1] 스터디 공간 조회 \n [2] 신규 예약 \n [3] 예약 조회 및 수정 \n [4] 초기화면 \n\n========================\n\n");
     printf(" Option : ");
     scanf("%d", &select);
-
     switch (select)
     {
     case 1:
@@ -429,8 +404,6 @@ int userMode(){
     default:
         break;
     }
-
-
     return 0;
 }
 
@@ -473,21 +446,14 @@ int reserve(char *id){
     // 오늘 날짜
     struct tm* t;
     time_t base = time(NULL);
-
     t = localtime(&base);
-    
     int today = (t->tm_year - 100) * 10000 + (t->tm_mon + 1) * 100 + (t->tm_mday);
-    // 예약 날짜
-    char reserveDay[7] = {0};
-
     
-    // 복사할 buffer
-    char filebuf[RECORDSIZE*6] = {0};
-    // 저장된 허용인원
-    int maxNum = 0;
-    // 예약 시간 56byte 짜리 배열 196-56 140
-    int arrTime[14] = {0};
-    int a = 0; // 해당 시간 비었는 지 체크
+    char reserveDay[7] = {0};           // 예약 날짜
+    char filebuf[RECORDSIZE*6] = {0};   // 복사할 buffer
+    int maxNum = 0;                     // 저장된 허용인원
+    int arrTime[14] = {0};              // 예약 시간 56byte 짜리 배열 196-56 140
+    int a = 0;                          // 해당 시간 비었는 지 체크
 
     // 사용자 예약 입력값 정보
     int branchNum = 0;
@@ -513,7 +479,6 @@ int reserve(char *id){
     printf(" [0] : 초기화면\n 예약할 날을 입력 햬주세요 <YYMMDD> : ");
     scanf("%s", reserveDay);
     if(atoi(reserveDay) == 0) return 0;
-
     if(today == atoi(reserveDay)){
         printf("\n\n 당일 예약은 불가 합니다 \n\n");
         return 0;
@@ -521,7 +486,6 @@ int reserve(char *id){
 
     // 개인 예약 정보 파일에 저장
     FILE *user;
-
     if(access(id, F_OK) < 0){
         user = fopen(id, "w+");
     } else {
@@ -534,15 +498,8 @@ int reserve(char *id){
         reserve = fopen(reserveDay, "w+");
         fwrite(filebuf, RECORDSIZE*6, 1, reserve);
     } else {
-        // 관리자가 중간에 추가 지점을 만들었을 경우 대비
         reserve = fopen(reserveDay, "r+");
-        // fread(reserveBuf, sizeof(RECORDSIZE*6), 1, reserve);
-        // fseek(reserve, 0, SEEK_SET);
-        // fwrite(filebuf, RECORDSIZE*6, 1, reserve);
-        // fseek(reserve, 0, SEEK_SET);
-        // fwrite(reserveBuf, sizeof(RECORDSIZE*6), 1, reserve);
     }
-
 
     // 예약 정보 받기
     printf("\n\n 반드시, 존재하는 지점, 스터디 공간을 확인하세요 \n\n 0을 입력하시면 초기화면으로 이동합니다! \n\n");
@@ -642,7 +599,6 @@ int reserve(char *id){
     fclose(fp);
 
     return 0;
-    
 }
 
 // 예약 수정
@@ -662,7 +618,6 @@ int fixReserve(char *id){
         printf(" 귀하의 예약 정보가 없습니다!\n");
         return 0;
     }
-
     user = fopen(id, "r+");
 
     // 사용자 예약 파일 읽어 오기
@@ -695,7 +650,7 @@ int fixReserve(char *id){
     printf(" [1] : 예약 변경\n\n [2] : 초기화면\n\n\n");
     printf(" Option : ");
     scanf("%d", &select);
-    // fclose(user);
+    fclose(user);
 
     int num = 0;
 
@@ -717,6 +672,7 @@ int fixReserve(char *id){
 
 }
 
+// 재예약 작업
 int reReserve(int num, char *id){
 
     FILE *reserve;
@@ -765,7 +721,7 @@ int reReserve(int num, char *id){
 
     // 날짜 예약 파일에 가서 변경전 데이터 지우기
     for(int i = 0; i < duration; i++){
-        fseek(reserve, 140 + 4 * (start - 8 + i) + (roomNum - 1) * RECORDSIZE + (branchNum -1) * RECORDSIZE, SEEK_SET);
+        fseek(reserve, 140 + 4 * (start - 8 + i) + (roomNum - 1) * ROOMRECORD + (branchNum -1) * RECORDSIZE, SEEK_SET);
         fwrite(&timereset, sizeof(int), 1, reserve);
     }
 
@@ -851,32 +807,3 @@ int reReserve(int num, char *id){
 
     return 0;
 }
-
-// 예약 파일 수정
-// int resetFile(char *reserveDay, int branchNum, int roomNum, int people, int start, int duration){
-
-//     FILE *reserve;
-//     reserve = fopen(reserveDay, "r+");
-
-//     int timereset = 0;
-//     // 기존 파일에서 타인의 예약 정보는 남기기 위한 구현부
-//     int a = 0;
-//     int arrTime[14] = {0};
-
-//     for(int i = 0; i < 14; i++){
-//         fseek(reserve, 140 + 4 * i + (roomNum - 1) * RECORDSIZE + (branchNum -1) * RECORDSIZE, SEEK_SET);
-//         fread(&a, sizeof(int), 1, reserve);
-//         if(a>0){
-//             arrTime[i] = 1;
-//         }
-//     }
-
-//     for(int i = 0; i < duration; i++){
-//         fseek(reserve, 140 + 4 * (start - 8 + i) + (roomNum - 1) * RECORDSIZE + (branchNum -1) * RECORDSIZE, SEEK_SET);
-//         fwrite(&timereset, sizeof(int), 1, reserve);
-//     }
-
-//     fclose(reserve);
-
-//     return 0;
-// }
