@@ -1,6 +1,8 @@
 #include <iostream>
 #include <cstdio>
 #include <string>
+#include <string.h>
+#include <cstring>
 #include <unistd.h>
 #include <cctype>
 using namespace std;
@@ -564,6 +566,7 @@ private:
         cout << "Option : ";
         cin >> mode;
         fclose(user);
+        fclose(reserve);
 
         int num = 0;
 
@@ -627,7 +630,7 @@ private:
 
         // 날짜 예약 파일에 가서 변경전 데이터 지우기
         for(int i = 0; i < duration; i++){
-            fseek(reserve, 140 + 4 * (start - 8 + i) + (roomNum - 1) * RECORDSIZE + (branchNum -1) * RECORDSIZE, SEEK_SET);
+            fseek(reserve, 140 + 4 * (start - 8 + i) + (roomNum - 1) * ROOMRECORD + (branchNum -1) * RECORDSIZE, SEEK_SET);
             fwrite(&timereset, sizeof(int), 1, reserve);
         }
  
