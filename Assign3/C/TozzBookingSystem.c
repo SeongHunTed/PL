@@ -1,7 +1,7 @@
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <string.h>
 #include <stdbool.h>
 #include <ctype.h>
 #include <time.h>
@@ -361,7 +361,7 @@ int remptycheck(FILE *fp, int roomNum, int branchNum){
 int userMode(){
     
     // 사용자 ID
-    char id[10] = {0};
+    char id[11] = {0};
     char exit[5] = "exit";
 
     while(1){
@@ -530,7 +530,7 @@ int reserve(char *id){
     printf("\n\n [0] : 초기화면\n 사용 시작 시간 <8시~ 22시> : ");       // 예외처리 오전 8시 부터 밤 10시
     scanf("%d", &start);
     if(start == 0) return 0;
-    if(start > 22){
+    if(start > 22 || start < 8){
         printf("\n\n 오픈 시간이 아닙니다\n");
         return 0;
     }
@@ -541,6 +541,7 @@ int reserve(char *id){
         printf("\n\n 마감 시간을 넘겨졌습니다.\n");
         return 0;
     }
+
 
     // 사전에 다른 사람이 예약했는지 확인하기
     for(int i = 0; i < duration; i++){
@@ -585,6 +586,7 @@ int reserve(char *id){
         count++;
     }
     count = count / USERRECORD;
+
 
     // 예약자 이름으로 예약 정보 저장하기
     fseek(user, USERRECORD * count, SEEK_SET);
